@@ -7,12 +7,11 @@ output: html_document
 
 
 ```{r load libraries}
-
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(wesanderson)
-
+library(plyr)
 ```
 
 
@@ -48,5 +47,42 @@ log_final_ecoli = d %>%
 ggsave(filename="../Results/final_ecoli.png",plot=final_ecoli, width = 8, height = 7) 
 ggsave(filename="../Results/log_final_ecoli.png",plot=log_final_ecoli, width = 8, height = 7) 
 
+```
+
+
+We should view the final E. coli data by Site. We need to compute the average of the E. coli by site. 
+
+
+```{r}
+data_summary = ddply(d, .(sample_id), summarise, mean_ecoli = mean(final_ecoli, na.rm = TRUE))
+```
+
+```{r}
+d$salmonella = fct_recode(d$salmonella, "no" = "NA")
+d$salmonella = fct_recode(d$salmonella, "no" = "N/A")
+d$salmonella = fct_recode(d$salmonella, "no" = "? - need to streak stocks and notes")
+```
+
+
+```{r}
+data_summary %>% ggplot(aes(x = sample_id, y = (mean_ecoli))) + geom_col()
+data_summary %>% ggplot(aes(x = sample_id, y = log10(mean_ecoli))) + geom_col()
+```
+
+Let's look at correlations between E. coli and any explanatory variables. Do we see any correlations?
+
+```{r}
+
+#Continuous Variables
+
+d %>% ggplot(aes(x = water_temp, y = log((final_ecoli)))) + geom_point()
+d %>% ggplot(aes(x = ambient_air_high_c, y = log((final_ecoli)))) + geom_point()
+d %>% ggplot(aes(x = ambient_air_low_c, y = log((final_ecoli)))) + geom_point()
+d %>% ggplot(aes(x = conductivity, y = log((final_ecoli)))) + geom_point()
+d %>% ggplot(aes(x = ph, y = log((final_ecoli)))) + geom_point()
+d %>% ggplot(aes(x = date_last_rain, y = log(final_ecoli))) + geom_point()
+
+#Categorical Varaibles 
+d %>% ggplot(aes(x = salmonella, y = (final_ecoli))) + geom_count()
 ```
 

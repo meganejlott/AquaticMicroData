@@ -11,7 +11,6 @@ This Rmd file loads, cleans, and organizes data variables collected from the Fal
 Start by loading all required libraries. 
 
 ```{r load libs}
-
 library(readxl)
 library(dplyr)
 library(tidyverse)
@@ -20,14 +19,13 @@ library(ggthemes)
 library(knitr)
 library(naniar)
 library(visdat)
-
-
+library(plyr)
 ```
 
 Next load the data. The path in the code chunk below is relative to the raw data file placed in this project. 
 
 ```{r load data}
-micro_raw_data <- readxl::read_excel("./raw_data.xlsx")
+micro_raw_data <- readxl::read_excel("../Data/raw_data.xlsx")
 ```
 
 Take a look at the data and variables to see what you are working with.
@@ -40,7 +38,7 @@ glimpse(micro_raw_data)
 Lots of variables here, mostly just information that needed to be recorded but is not particularly useful for data analysis so we will remove some variables that are not needed for visualization/statistics for simplicity sake. Also a number of the variables loaded into the data set with strange additions so we will remove them to reduce typos.
 
 ```{r}
-clean_names = micro_raw_data %>% dplyr::rename(sample_id = `Sample ID`, 
+d = micro_raw_data %>% dplyr::rename(sample_id = `Sample ID`, 
                         last_rain = `Days Sine Last Rainfaill Greater than 2 inches (amount of rainfall)`,
                                      collection_time = `Collection Time`,
                                      ambient_air_high_c = `Ambient Air Temp High (C)`,
@@ -52,56 +50,60 @@ clean_names = micro_raw_data %>% dplyr::rename(sample_id = `Sample ID`,
                                      salmonella = `Chromagar Confirmed Salmonella`,
                                      date = Date,
                                      ph = pH)
-
+d = d %>% filter(sample_id != "NA")
 ```
 
 
 
 ```{r}
-reduce_vars <- clean_names %>% dplyr::select(sample_id, last_rain, date, ambient_air_high_c, ambient_air_low_c, water_temp, conductivity, ph, final_ecoli, exceeds_epa, salmonella )
+d = d %>% dplyr::select(sample_id, last_rain, date, ambient_air_high_c, ambient_air_low_c, water_temp, conductivity, ph, final_ecoli, exceeds_epa, salmonella )
 
-glimpse(reduce_vars)
+glimpse(d)
 ```
 
 Now we can check what kind of data and observations we are dealing with.
 
 ```{r}
-vis_dat(reduce_vars)
+vis_dat(d)
 ```
 
 We may want to re-code sample IDs. 
 
 ```{r}
 
-as.factor(reduce_vars$sample_id)
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "P1" = "P1 (Plaza)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "P2" = "P2 (Plaza)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "H1" = "PR1 (Hospital)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "H2" = "PR2 (Hospital)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "VM1" = "VM1 (Vet Med)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "VM2" = "VM2 (Vet Med)")
-reduce_vars$sample_id = fct_recode(reduce_vars$sample_id, "T1" = "T1 (Tanyard)")
+as.factor(d$sample_id)
+d$sample_id = fct_recode(d$sample_id, "P1" = "P1 (Plaza)")
+d$sample_id = fct_recode(d$sample_id, "P2" = "P2 (Plaza)")
+d$sample_id = fct_recode(d$sample_id, "H1" = "PR1 (Hospital)")
+d$sample_id = fct_recode(d$sample_id, "H2" = "PR2 (Hospital)")
+d$sample_id = fct_recode(d$sample_id, "VM1" = "VM1 (Vet Med)")
+d$sample_id = fct_recode(d$sample_id, "VM2" = "VM2 (Vet Med)")
+d$sample_id = fct_recode(d$sample_id, "T1" = "T1 (Tanyard)")
 
 ```
 
-
-```{r}
-reduce_vars$final_ecoli = as.numeric(reduce_vars$final_ecoli)
-vis_dat(reduce_vars)
-
-```
-
-
-
-Let's adjust the 'last_rain' variable into a numeric section. 
+We may also want to re-code salmonella. 
 
 ```{r}
 
 ```
 
 
+
+Change Varibles. Make E. coli numeric. Make last rain numeric.
+
 ```{r}
-data_cleaned = reduce_vars
-saveRDS(data_cleaned, file = "./data/processed_data/data_cleaned.rds")
+#Make E.coli numeric
+d$final_ecoli = as.numeric(d$final_ecoli)
+
+#Make last rain numeric. 
+d = d %>% separate(last_rain, c("date_last_rain", "volume_last_rain"), sep = 2)
+d$date_last_rain = as.numeric(d$date_last_rain)
+vis_dat(d)
+```
+
+
+```{r}
+saveRDS(d, file = "../Data/processed_data/data_cleaned.rds")
 ```
 
